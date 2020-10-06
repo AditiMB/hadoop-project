@@ -1,0 +1,726 @@
+Following are the Pig and Hive codes for Data Analysis:
+
+# Pig Codes:
+
+# Loading the data: (ClickStream Data):
+data1 = load '/home/cloudera/Desktop/DT1.csv' using PigStorage(',', 'SKIP_INPUT_HEADER') as (Product:chararray, Category:chararray, Date:chararray, Month:chararray, Hour:int, Department:chararray, ip:chararray, url:chararray);
+describe data1;
+
+# 1.Top 10 Categories sold from "Category" Column:
+groupbycat = group data1 by Category;
+describe groupbycat;
+countbycat = foreach groupbycat GENERATE group AS Category, COUNT($1) AS CategoryCount;
+describe countbycat;
+dump countbycat;
+orderedcat = order countbycat by CategoryCount DESC;
+top10cat = limit orderedcat 10;
+dump top10cat;
+
+(cleats,27878)
+(shop by sport,26227)
+(featured shops,26200)
+(women's apparel,25627)
+(men's footwear,25241)
+(girls' apparel,24581)
+(electronics,20845)
+(indoor outdoor games,16194)
+(water sports,16186)
+(hunting & shooting,15645)
+
+# 2.Top Purchase Month:
+groupbymonth = group data1 by Month;
+describe groupbymonth;
+countbymonth = foreach groupbymonth GENERATE group AS Month, COUNT($1) AS CategoryMonth;
+describe countbymonth;
+dump countbymonth;
+
+(Dec,84093)
+(Jan,83581)
+(Nov,80860)
+(Oct,84205)
+(Sep,137238)
+
+# 3.Peak Hours to purchase:
+groupbyhour = group data1 by Hour;
+describe groupbyhour;
+countbyhour = foreach groupbyhour GENERATE group AS Hour, COUNT($1) AS HourCount;
+describe countbyhour;
+dump countbyhour;
+orderedhour = order countbyhour by HourCount DESC;
+tophours = limit orderedhour 3;
+dump tophours;
+
+(21,30749)
+(20,30551)
+(22,29682)
+
+# Importing Data: (Sales Data):
+data2 = load '/home/cloudera/Desktop/DT2.csv' using PigStorage(',', 'SKIP_INPUT_HEADER') as (Type:chararray,Benefitperorder:int,Salespercustomer:int,DeliveryStatus:chararray,Latedeliveryrisk:int,CustomerSegment:chararray,Market:chararray,OrderCity:chararray,OrderCountry:chararray,OrderItemDiscount:int,OrderItemDiscountRate:int,OrderItemProductPrice:int,OrderItemProfitRatio:int,OrderItemQuantity:int,Sales:int,OrderItemTotal:int,OrderProfitPerOrder:int,OrderState:chararray,OrderStatus:chararray,ProductName:chararray,ProductPrice:int,ShippingMode:chararray);
+describe data2;
+
+# 4.Most preferred payment type:
+groupbytype = group data2 by Type;
+describe groupbytype;
+countbytype = foreach groupbytype GENERATE group AS Type, COUNT($1) AS TypeCount;
+describe countbytype;
+dump countbytype;
+orderedtype = order countbytype by TypeCount DESC;
+toptype = limit orderedtype 1;
+dump toptype;
+
+(CASH,19616)
+(DEBIT,69295)
+(PAYMENT,41725)
+(TRANSFER,49883)
+
+(DEBIT,69295)
+
+# 5.Percentage Wise Delivery Status:
+delivery = FOREACH data2 GENERATE DeliveryStatus;
+groupdel = GROUP delivery BY DeliveryStatus;
+countbydelstatus = FOREACH groupdel GENERATE FLATTEN(group),COUNT(delivery) AS num;
+allstatus = GROUP countbydelstatus ALL;
+totalcount = FOREACH allstatus GENERATE FLATTEN(countbydelstatus), SUM(countbydelstatus.num) AS num_total;
+percentage = FOREACH totalcount GENERATE (double)num*100/(double)num_total AS percent;
+
+(Late delivery,98977)
+(Advance shipping,41592)
+(Shipping on time,32196)
+(Shipping canceled,7754)
+
+(4.295368934190117)
+(17.83514292045203)
+(23.04010635940616)
+(54.828827830711276)
+
+# 6.Percentage Wise Late Delivery Risk:
+late = FOREACH data2 GENERATE Latedeliveryrisk;
+grouplate = GROUP late BY Latedeliveryrisk;
+countbyrisk = FOREACH grouplate GENERATE FLATTEN(group),COUNT(late) AS num;
+allrisk = GROUP countbyrisk ALL;
+totalcount = FOREACH allrisk GENERATE FLATTEN(countbyrisk), SUM(countbyrisk.num) AS num_total;
+percentage = FOREACH totalcount GENERATE num*100/(double)num_total AS percent;
+dump percentage;
+
+(54.829131559558824)
+(45.170868440441176)
+
+# 7.Percentage Wise Customer Segment:
+customer = FOREACH data2 GENERATE CustomerSegment;
+groupcust = GROUP customer BY CustomerSegment;
+countbycust = FOREACH groupcust GENERATE FLATTEN(group),COUNT(customer) AS num;
+allcust = GROUP countbycust ALL;
+totalcount = FOREACH allcust GENERATE FLATTEN(countbycust), SUM(countbycust.num) AS num_total;
+percentage = FOREACH totalcount GENERATE  (double)num*100/(double)num_total AS percent;
+dump percentage;
+
+(17.851761577664526)
+(30.350653667183693)
+(51.79703079991137)
+
+# 8.Percentage Wise Market:
+market = FOREACH data2 GENERATE Market;
+groupmark = GROUP market BY Market;
+countbymark = FOREACH groupmark GENERATE FLATTEN(group),COUNT(market) AS num;
+allmark = GROUP countbymark ALL;
+totalcount = FOREACH allmark GENERATE FLATTEN(countbymark), SUM(countbymark.num) AS num_total;
+percentage = FOREACH totalcount GENERATE (double)num*100/(double)num_total AS percent;
+dump percentage;
+
+(USCA,25799)
+(LATAM,51594)
+(Africa,11614)
+(Europe,50252)
+(Pacific Asia,41260)
+
+(22.85619321958786)
+(27.837358741413695)
+(6.433636162198094)
+(28.580766674052736)
+(14.291491247507201)
+
+# 9.Top Countries Ordering:
+groupbycnt = group data2 by OrderCountry;
+describe groupbycnt;
+countbytcnt = foreach groupbycnt GENERATE group AS Country, COUNT($1) AS TypeCount;
+describe countbycnt;
+dump countbycnt;
+orderedcnt = order countbytcnt by TypeCount DESC;
+toptype = limit orderedcnt 10;
+dump toptype;
+
+(Estados Unidos,24840) # USA
+(Francia,13222)
+(M�xico,13172)
+(Alemania,9564)
+(Australia,8497)
+(Brasil,7987)
+(Reino Unido,7302)
+(China,5758)
+(Italia,4989)
+(India,4783)
+
+# 10.Percentage Wise Order Status:
+ord = FOREACH data2 GENERATE OrderStatus;
+groupord = GROUP ord BY OrderStatus;
+countbyord = FOREACH groupord GENERATE FLATTEN(group),COUNT(ord) AS num;
+allorder = GROUP countbyord ALL;
+totalcount = FOREACH allorder GENERATE FLATTEN(countbyord), SUM(countbyord.num) AS num_total;
+percentage = FOREACH totalcount GENERATE (double)num*100/(double)num_total AS percent;
+dump percentage;
+
+(2.250166186572125)
+(22.06514513627299)
+(1.0486372701085753)
+(12.132727675603812)
+(32.95535120762242)
+(2.0452027476179926)
+(11.20485264790605)
+(5.430977177044094)
+(10.866385996011521)
+
+# 11.Percentage Wise Shipping Mode:
+shipped = FOREACH data2 GENERATE ShippingMode;
+groupship = GROUP shipped BY ShippingMode;
+countbyship = FOREACH groupship GENERATE FLATTEN(group),COUNT(shipped) AS num;
+allship = GROUP countbyship ALL;
+totalcount = FOREACH allship GENERATE FLATTEN(countbyship), SUM(countbyship.num) AS num_total;
+percentage = FOREACH totalcount GENERATE (double)num*100/(double)num_total AS percent;
+dump percentage;
+
+(59.68978506536672)
+(19.508087746510082)
+(15.4077110569466)
+(5.393862175936184)
+
+# 12.Average Discount Given:
+discount_all = Group data2 All;
+discount_avg = foreach discount_all generate AVG(data2.OrderItemDiscount);
+dump discount_avg;
+
+(20.388103191353817)
+
+# 13.Sales generated according to customer segment:
+a = group data2 by CustomerSegment;
+b = foreach a generate group as country, SUM(data2.Sales) as sum;
+sortb = order b by sum DESC;
+top3cnt = limit sortb 3;
+dump top3cnt;
+
+(Consumer,19019081)
+(Corporate,11123506)
+(Home Office,6494092)
+
+# 14.Profit generated according to customer segment:
+a = group data2 by CustomerSegment;
+b = foreach a generate group as country, SUM(data2.OrderProfitPerOrder) as sum;
+sortb = order b by sum DESC;
+top10cnt = limit sortb 3;
+dump top10cnt;
+
+(Consumer,2045275)
+(Corporate,1186174)
+(Home Office,681134)
+
+# 15.Top 10 Countries generating highest sales: 
+a = group data2 by OrderCountry;
+b = foreach a generate group as country, SUM(data2.Sales) as sum;
+sortb = order b by sum DESC;
+top10cnt = limit sortb 10;
+dump top10cnt;
+
+(Estados Unidos,4858936) # USA
+(Francia,2869355)
+(M�xico,2622068)
+(Alemania,2066473)
+(Australia,1687837)
+(Reino Unido,1606243)
+(Brasil,1587668)
+(China,1168367)
+(Italia,1068163)
+(India,958621)
+
+# 16.Top 10 Countries generating highest profits: 
+a = group data2 by OrderCountry;
+b = foreach a generate group as country, SUM(data2.OrderProfitPerOrder) as sum;
+sortb = order b by sum DESC;
+top10cnt = limit sortb 10;
+dump top10cnt;
+
+(Estados Unidos,532964) # USA
+(Francia,323778)
+(M�xico,299211)
+(Alemania,192036)
+(Brasil,184303)
+(Reino Unido,178745)
+(Australia,167537)
+(China,120459)
+(Italia,120018)
+(India,98301)
+
+
+
+CONCLUSIONS:
+1. Out of the four payment type options, customers preferred Debit Card for their purchasing transactions.
+2. The delivery status of the products were mostly "Late delivery" followed by "Advanced Shipping" and "Shipping on time".
+3. Most products were purchased by the customers from the European Market.
+4. The Customer Segment "Consumers" generated most Sales as well as Profits for the company.
+5. The average discount given was 20.38% on each product, when bought from the company's website.
+
+
+
+
+
+# Hive Codes:
+
+1. # To Create External Table
+CREATE EXTERNAL TABLE IF NOT EXISTS googleapps(App VARCHAR(50),Category VARCHAR(20),Rating VARCHAR(20),Reviews int,Size VARCHAR(20),Installs VARCHAR(20),Type VARCHAR(20),Price int,ContentRating VARCHAR(20),Genres VARCHAR(20),LastUpdated VARCHAR(20)) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',';
+
+2. # To load the data inside Hive
+load data local inpath '/home/cloudera/Desktop/googleplaystore1.csv' into table googleapps;
+
+3. # To display column names and type of variable
+describe googleapps;
+app                 	varchar(50)         	                    
+category            	varchar(20)         	                    
+rating              	varchar(20)         	                    
+reviews             	int                 	                    
+size                	varchar(20)         	                    
+installs            	varchar(20)         	                    
+type                	varchar(20)         	                    
+price               	int                 	                    
+contentrating       	varchar(20)         	                    
+genres              	varchar(20)         	                    
+lastupdated         	varchar(20)  
+       	
+4. # To select any 10 Categories with lowest rating
+select Category, min(Rating) from googleapps group by Category LIMIT 10;
+ART_AND_DESIGN	3
+AUTO_AND_VEHICLES	2.1
+BEAUTY	3
+BOOKS_AND_REFERENCE	2.7
+BUSINESS	1
+COMICS	2.8
+COMMUNICATION	1
+DATING	1
+EDUCATION	3
+ENTERTAINMENT	3
+
+5. # To display any 10 distinct categories
+select distinct Category from googleapps LIMIT 10;
+EVENTS
+FAMILY
+FINANCE
+FOOD_AND_DRINK
+Face
+GAME
+GIF
+HEALTH_AND_FITNESS
+HOUSE_AND_HOME
+LIFESTYLE
+
+6. # To select any 10 Apps with type 'Free' and rating '5'
+select App, Type, Rating from googleapps where Type = "Free" and Rating = 5 LIMIT 10;
+Awake Dating	Free	5
+Spine- The dating app	Free	5
+Girls Live Talk - Free Text and Video Chat	Free	5
+Online Girls Chat Group	Free	5
+Speeding Joyride & Car Meet App	Free	5
+SUMMER SONIC app	Free	5
+Prosperity	Free	5
+Mindvalley U Tallinn 2018	Free	5
+Sway Medical	Free	5
+Labs on Demand	Free	5
+
+7. # To select Paid Apps with Rating <=2
+select App, Type, Rating from googleapps where Type = "Paid" and Rating <= 2;
+Speech Therapy: F	Paid	1
+Truck Driving Test Class 3 BC	Paid	1
+Bitcoin BX Thailand PRO	Paid	1.7
+SharedCare™ Co-parenting	Paid	2
+
+8. # To select Apps with Reviews >50000000
+select App, Reviews from googleapps where Reviews > 50000000;
+Messenger – Text and Video Chat for Free	56642847
+WhatsApp Messenger	69119316
+WhatsApp Messenger	69119316
+Messenger – Text and Video Chat for Free	56646578
+Facebook	78158306
+Instagram	66577313
+Instagram	66577446
+Instagram	66577313
+WhatsApp Messenger	69109672
+Instagram	66509917
+Facebook	78128208
+Messenger – Text and Video Chat for Free	56642847
+
+9. # To select Apps with rating >=4 and reviews >50000000
+select App, Reviews, Rating from googleapps where Rating >= 4 and Reviews > 50000000;
+Messenger – Text and Video Chat for Free	56642847	4
+WhatsApp Messenger	69119316	4.4
+WhatsApp Messenger	69119316	4.4
+Messenger – Text and Video Chat for Free	56646578	4
+Facebook	78158306	4.1
+Instagram	66577313	4.5
+Instagram	66577446	4.5
+Instagram	66577313	4.5
+WhatsApp Messenger	69109672	4.4
+Instagram	66509917	4.5
+Facebook	78128208	4.1
+Messenger – Text and Video Chat for Free	56642847	
+
+10. # To select top 5 Apps with highest price
+select App, Price, Type from googleapps where Type = "Paid" SORT BY Price DESC LIMIT 5;
+Vital Tones EI Pro	9	Paid
+Guide to Nikon Df	9	Paid
+LTC AS Legal	9	Paid
+Z PIVOT	9	Paid
+AP Art History Flashcards	9	Paid
+
+11. # To select any 5 Apps with top rating
+select App, Rating from googleapps where Rating = 5 LIMIT 5;
+Hojiboy Tojiboyev Life Hacks	5
+American Girls Mobile Numbers	5
+Awake Dating	5
+Spine- The dating app	5
+Girls Live Talk - Free Text and Video Chat	5
+
+12. # To display highest price among all Apps
+select MAX(Price) as highest_price from googleapps WHERE Type = "Paid";
+9
+
+13. # To display count of App's Type
+select Type, COUNT(*) from googleapps GROUP BY Type;
+Free	10041
+Paid	800
+
+14. # To select top 5 Apps by reviews
+select App, Reviews from googleapps ORDER BY Reviews DESC LIMIT 5;
+Facebook	78158306
+Facebook	78128208
+WhatsApp Messenger	69119316
+WhatsApp Messenger	69119316
+WhatsApp Messenger	69109672
+
+15. # To display count of App's Content rating
+select ContentRating, COUNT(*) from googleapps GROUP BY ContentRating;
+Everyone	8714
+Everyone 10+	414
+Adults only 18+ 	3
+Mature 17+	499
+Teen	1208
+Unrated	3
+
+16. # To display count of any 10 App's Genre
+select Genres, COUNT(*) from googleapps GROUP BY Genres LIMIT 10;
+Health & Fitness	59
+Travel & Local	30
+Art & Design	2
+News & Magazines	46
+Auto & Vehicles	18
+Medical	154
+Beauty	7
+Comics	2
+Music	1
+Dating	50
+
+17. # To display any 5 categories with average rating
+select Category, AVG(Rating) from googleapps GROUP BY Category LIMIT 5;
+SHOPPING	4.116000000000002
+SOCIAL	4.0734615384615385
+SPORTS	3.9818965517241387
+TOOLS	3.894658385093169
+TRAVEL_AND_LOCAL	3.9449579831932757
+
+18. To select Apps with top rating and cluster by category
+select App, Rating, Category from googleapps WHERE Rating = 5 CLUSTER BY Category;
+Spring flowers theme couleurs d t space	5	ART_AND_DESIGN
+BC MVA Fines	5	BOOKS_AND_REFERENCE
+Catholic La Bu Zo Kam	5	BOOKS_AND_REFERENCE
+CZ-Help	5	BOOKS_AND_REFERENCE
+R Programing Offline Tutorial	5	BOOKS_AND_REFERENCE
+Hey AJ! It's Saturday!	5	BOOKS_AND_REFERENCE
+Tozer Devotional -Series 1	5	BOOKS_AND_REFERENCE
+FK CLASSIC FOR YOU	5	BUSINESS
+CQ ESPM	5	BUSINESS
+Propel BI APP	5	BUSINESS
+Jobs in Canada - Emplois au Canada	5	BUSINESS
+DB Pickles	5	BUSINESS
+ES Solar	5	BUSINESS
+EB Cash Collections	5	BUSINESS
+NEMA ei	5	BUSINESS
+DW Security	5	BUSINESS
+BK Arogyam Task Track	5	BUSINESS
+Ag Valley Cooperative	5	BUSINESS
+BJ Foods	5	BUSINESS
+FN	5	BUSINESS
+CJ the REALTOR	5	BUSINESS
+CK Employee Portal	5	BUSINESS
+CP Installer App	5	BUSINESS
+EF App	5	BUSINESS
+EF Forms	5	BUSINESS
+Hojiboy Tojiboyev Life Hacks	5	COMICS
+Cb browser	5	COMMUNICATION
+chat dz	5	COMMUNICATION
+BV	5	COMMUNICATION
+EJ messenger	5	COMMUNICATION
+BS-Mobile	5	COMMUNICATION
+Online Girls Chat Group	5	DATING
+Girls Live Talk - Free Text and Video Chat	5	DATING
+Speeding Joyride & Car Meet App	5	DATING
+American Girls Mobile Numbers	5	DATING
+Spine- The dating app	5	DATING
+Awake Dating	5	DATING
+FAST EO	5	EVENTS
+Mindvalley U Tallinn 2018	5	EVENTS
+EF Events	5	EVENTS
+EK Bailey Preaching Conference	5	EVENTS
+Prosperity	5	EVENTS
+SUMMER SONIC app	5	EVENTS
+Fr. Mike Schmitz Audio Teachings	5	FAMILY
+Fr. Daoud Lamei	5	FAMILY
+Florida Wildflowers	5	FAMILY
+FH School	5	FAMILY
+Jigsaw Volvo FH 16 Trucks	5	FAMILY
+Safe Santa Fe	5	FAMILY
+Story Time FD	5	FAMILY
+daskal.eu	5	FAMILY
+EP Radio	5	FAMILY
+Shabad Gurubani Punjabi mp3 free - Ek Onkar Satnam	5	FAMILY
+Lyrics of Ek Paheli Leela	5	FAMILY
+Ek Qissa He Quran Se (Qurani Waqiyat)	5	FAMILY
+Ek Bander Ne Kholi Dukan	5	FAMILY
+Pyaar Ek Dhoka	5	FAMILY
+Master E.K	5	FAMILY
+EC Fairgrounds	5	FAMILY
+EC Calgary	5	FAMILY
+DYPSOET	5	FAMILY
+Chronolink DX	5	FAMILY
+DV ASSIST	5	FAMILY
+WPBS-DT	5	FAMILY
+DN Employee	5	FAMILY
+Disciple Maker’s (DM) Lab	5	FAMILY
+DM Buddy » Learn Digital Marketing	5	FAMILY
+PK and DK Audio App	5	FAMILY
+DH-UFO	5	FAMILY
+DC N COMPANY ENTERTAINMENT RADIO!	5	FAMILY
+30WPM Amateur ham radio Koch CW Morse code trainer	5	FAMILY
+Morse Player	5	FAMILY
+CT Brain Interpretation	5	FAMILY
+CS & IT Interview Questions	5	FAMILY
+Cr Aviation Academy	5	FAMILY
+Foothills CP	5	FAMILY
+CN Resident	5	FAMILY
+Tic Tac CK	5	FAMILY
+USMLE Step 2 CK Flashcards	5	FAMILY
+Sir C J New Primary School	5	FAMILY
+CG Jobs	5	FAMILY
+CG - Chemistry free	5	FAMILY
+CG FM	5	FAMILY
+CF Life	5	FAMILY
+MCQ CE IT	5	FAMILY
+TI-84 CE Graphing Calculator Manual TI 84	5	FAMILY
+Yazdani Cd Center EllahAbad Official App	5	FAMILY
+CD CHOICE TUBE	5	FAMILY
+CB Register	5	FAMILY
+CB News	5	FAMILY
+BV Sridhara Maharaj	5	FAMILY
+Barisal University App-BU Face	5	FAMILY
+BU Study	5	FAMILY
+Wifi BT Scanner	5	FAMILY
+COMSATS BOOK STORE FOR BS(CS)	5	FAMILY
+BM SPM Practice	5	FAMILY
+BK Video Status	5	FAMILY
+HON. B.J. ACS COLLEGE ALE	5	FAMILY
+Bh Public School	5	FAMILY
+Exam Result BD	5	FAMILY
+Railroad Radio Vancouver BC	5	FAMILY
+Quran Khmer Offline AY	5	FAMILY
+Wowkwis aq Ka'qaquj	5	FAMILY
+Accounting Quiz (AQ) Malaysia	5	FAMILY
+AQ Ria Retail	5	FAMILY
+AP Art History Flashcards	5	FAMILY
+meStudying: AP English Lit	5	FAMILY
+AP® Guide	5	FAMILY
+AJ Rafael Music Lessons	5	FAMILY
+Hey AJ! It's Bedtime!	5	FAMILY
+DN Calculators	5	FINANCE
+CF	5	FINANCE
+BxPort - Bitcoin Bx (Thailand)	5	FINANCE
+BK Gold App	5	FINANCE
+BI APP	5	FINANCE
+Free coupons and vouchers	5	FINANCE
+CT Checkout	5	FINANCE
+Bar-B-Q Rib House	5	FOOD_AND_DRINK
+Food-Aw - Order Food Online in Aruba	5	FOOD_AND_DRINK
+Monster Ride Pro	5	GAME
+Brick Breaker BR	5	GAME
+Trovami se ci riesci	5	GAME
+Santa's Monster Shootout DX	5	GAME
+EC Mover	5	GAME
+211:CK	5	GAME
+Mad Dash Fo' Cash	5	GAME
+Mu.F.O.	5	GAME
+Axe Champs! Wars	5	GAME
+Flippy Axe : Flip The Knife & Axe Simulator	5	GAME
+Ra Ga Ba	5	GAME
+CP Trivia	5	GAME
+CL Strength	5	HEALTH_AND_FITNESS
+Bacterial vaginosis Treatment - Sexual disease	5	HEALTH_AND_FITNESS
+MI-BP	5	HEALTH_AND_FITNESS
+Dt. Jyothi Srinivas	5	HEALTH_AND_FITNESS
+EF Academy	5	HEALTH_AND_FITNESS
+C B Patel Health Club	5	HEALTH_AND_FITNESS
+Cloud DX Connected Health	5	HEALTH_AND_FITNESS
+CB Fit	5	HEALTH_AND_FITNESS
+Santa Fe Thrive	5	HEALTH_AND_FITNESS
+BM Physiotherapy Clinic	5	HEALTH_AND_FITNESS
+CF Townsville	5	HEALTH_AND_FITNESS
+The CJ Rubric	5	HEALTH_AND_FITNESS
+Nur təfsiri 1-ci cild	5	LIBRARIES_AND_DEMO
+Eternal life	5	LIBRARIES_AND_DEMO
+Tafsiir Quraan MP3 Af Soomaali Quraanka Kariimka	5	LIFESTYLE
+Ríos de Fe	5	LIFESTYLE
+Color CL	5	LIFESTYLE
+EG India	5	LIFESTYLE
+Overcomers CF - GA	5	LIFESTYLE
+Unity CF	5	LIFESTYLE
+CA Speakers	5	LIFESTYLE
+EP Church Annapolis	5	LIFESTYLE
+BP Log lite	5	LIFESTYLE
+Bk Usha behn	5	LIFESTYLE
+Dr Bk Sachin bhai	5	LIFESTYLE
+Read it easy for BK	5	LIFESTYLE
+Barbers.BH	5	LIFESTYLE
+Helping BD	5	LIFESTYLE
+EU Exit poll	5	LIFESTYLE
+South Florida AA Meetings	5	LIFESTYLE
+GKPB FP Online Church	5	LIFESTYLE
+AJ Men's Grooming	5	LIFESTYLE
+DV Youth	5	LIFESTYLE
+Comunidad De Fe Minitries	5	LIFESTYLE
+D-H Pharmacy	5	LIFESTYLE
+The Divine Feminine App: the DF App	5	LIFESTYLE
+AC DC Power Monitor	5	LIFESTYLE
+DB HOME	5	LIFESTYLE
+Cy-Fair Christian Church	5	LIFESTYLE
+Oración CX	5	LIFESTYLE
+Lakeside AG Moultrie	5	LIFESTYLE
+Basics of Orthopaedics	5	MEDICAL
+Sway Medical	5	MEDICAL
+Arrowhead AH App	5	MEDICAL
+BP Journal - Blood Pressure Diary	5	MEDICAL
+Labs on Demand	5	MEDICAL
+420 BZ Budeze Delivery	5	MEDICAL
+CT Cervical Spine	5	MEDICAL
+Sway Medical	5	MEDICAL
+FHR 5-Tier 2.0	5	MEDICAL
+BP Journal - Blood Pressure Diary	5	MEDICAL
+Super Hearing Secret Voices Recorder PRO	5	MEDICAL
+Zen Leaf	5	MEDICAL
+Cy-Fair VFD EMS Protocols	5	MEDICAL
+Clinic Doctor EHr	5	MEDICAL
+Chenoweth AH	5	MEDICAL
+Kimbrough AH	5	MEDICAL
+You're an Anime	5	MEDICAL
+PrimeDelivery	5	MEDICAL
+Anatomy & Physiology Vocabulary Exam Review App	5	MEDICAL
+CARDIAC CT TECHNIQUE	5	MEDICAL
+420 BZ Budeze Delivery	5	MEDICAL
+NCLEX Multi-topic Nursing Exam Review-Quiz & notes	5	MEDICAL
+FoothillsVet	5	MEDICAL
+Asha Ek Hope - ALS/ MND	5	MEDICAL
+KBA-EZ Health Guide	5	MEDICAL
+Galaxies of Hope	5	MEDICAL
+Tablet Reminder	5	MEDICAL
+Dermatology Atlas (Colored & Illustrative)	5	MEDICAL
+DG TV	5	NEWS_AND_MAGAZINES
+AI Today : Artificial Intelligence News & AI 101	5	NEWS_AND_MAGAZINES
+BI News	5	NEWS_AND_MAGAZINES
+Noticias FC Barcelona	5	NEWS_AND_MAGAZINES
+NOMISMA.com.cy by FMW	5	NEWS_AND_MAGAZINES
+DF Glue Board	5	PARENTING
+Eh Bee Wallpapers HD	5	PERSONALIZATION
+AJ Blue Icon Pack	5	PERSONALIZATION
+P-Home for KLWP	5	PERSONALIZATION
+CI 174 Gray Icon Pack	5	PERSONALIZATION
+RETRO Shocked DW-6000	5	PERSONALIZATION
+Android P Style Icon Pack	5	PERSONALIZATION
+Wallpapers FN SCAR H	5	PERSONALIZATION
+FO Bixby	5	PERSONALIZATION
+AJ Gray Dark Icon Pack	5	PERSONALIZATION
+cx advance call blocker	5	PERSONALIZATION
+AJ Cam	5	PHOTOGRAPHY
+CB VIDEO VISION	5	PHOTOGRAPHY
+DC-014	5	PHOTOGRAPHY
+CG Prints	5	PHOTOGRAPHY
+Selfie With Champion AJ Style	5	PHOTOGRAPHY
+i am EB	5	PHOTOGRAPHY
+ES Billing System (Offline App)	5	PRODUCTIVITY
+CJ'S TIRE AND AUTO INC.	5	PRODUCTIVITY
+Ek Vote	5	PRODUCTIVITY
+EB Scanner	5	PRODUCTIVITY
+DL Image Manager	5	PRODUCTIVITY
+ER Assist	5	PRODUCTIVITY
+iReadMe	5	PRODUCTIVITY
+BV Mobile Apps	5	PRODUCTIVITY
+DT CLOTHINGS	5	SHOPPING
+AJ RETAILS	5	SHOPPING
+BL Flowers Digital	5	SHOPPING
+DG OFF - 100% Free Coupons & Deals	5	SHOPPING
+A-Y Collection	5	SHOPPING
+Dine In CT - Food Delivery	5	SHOPPING
+iCard BD Plus	5	SOCIAL
+CJ Gospel Hour	5	SOCIAL
+UP EB Bill Payment & Details	5	SOCIAL
+DN Blog	5	SOCIAL
+Hum Ek Hain 2.02	5	SOCIAL
+CB Heroes	5	SOCIAL
+Movement BE	5	SOCIAL
+Eternal Light AG	5	SOCIAL
+EC SPORTS	5	SPORTS
+CricQuick	5	SPORTS
+FK Dedinje BGD	5	SPORTS
+FA Player Essentials	5	SPORTS
+BM speed test	5	TOOLS
+CL REPL	5	TOOLS
+DG-App	5	TOOLS
+Jabbla BT	5	TOOLS
+DW Timer	5	TOOLS
+Victoria EC	5	TOOLS
+CR Tracker for Chests	5	TOOLS
+ADS-B Driver	5	TOOLS
+BK Formula Calculator	5	TOOLS
+ei Calc	5	TOOLS
+CZ Kompas	5	TOOLS
+Dr. ES PV Calculator	5	TOOLS
+CE Smart	5	TOOLS
+ReactNative BG Geolocation	5	TOOLS
+CL Notifier	5	TOOLS
+CL Keyboard - Myanmar Keyboard (No Ads)	5	TOOLS
+Easy Hotspot Ad Free	5	TOOLS
+BG Guide	5	TRAVEL_AND_LOCAL
+CJ's Coffee Cafe	5	TRAVEL_AND_LOCAL
+Florida Beach Wallpapers HD	5	TRAVEL_AND_LOCAL
+
+19. # To change particular column name
+ALTER TABLE googleapps CHANGE App PlaystoreApp VARCHAR(50);
+
+20. # To delete rating <4
+DELETE from googleapps WHERE Rating < 4;
+
+21. # To change the Table name
+ALTER TABLE googleapps RENAME TO GooglePlaystoreApps;
+
+22. # To drop the Table
+DROP TABLE GooglePlaystoreApps;
+
+
+
+CONCLUSIONS:
+1. In our data there are more Free Apps when compared to Paid.
+2. Highest price among all Apps is $9.
+3. There are 34 distinct Genres of Apps like Medical, Beauty, Finance, Lifestyle etc
+4. More than 50000000 reviews for the famous Apps like WhatsApp Messenger, Instagram, Facebook etc.
+5. Many Apps like Awake Dating, Girls Live Talk - Free Text and Video Chat, Sway Medical etc are free with top rating.
+6. There are more Teen than Mature 17+ to rate the contents.
